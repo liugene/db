@@ -45,7 +45,7 @@ class Db extends Facade
      */
     public static function getApplicationName()
     {
-        return 'link\\db\\Query';
+        return 'linkphp\\db\\Query';
     }
 
 }
