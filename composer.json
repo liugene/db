@@ -1,5 +1,5 @@
 {
-  "name": "links/db",
+  "name": "linkphp/db",
   "type": "library",
   "description": "php orm 框架",
   "keywords": ["orm","php orm framework"],
@@ -14,7 +14,7 @@
   },
   "autoload": {
     "psr-4": {
-      "links\\db\\": "src"
+      "linkphp\\db\\": "src"
     }
   }
 }
