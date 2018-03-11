@@ -14,7 +14,7 @@
   },
   "autoload": {
     "psr-4": {
-      "links\\db": "src"
+      "links\\db\\": "src"
     }
   }
 }
