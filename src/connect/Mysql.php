@@ -1,7 +1,7 @@
 <?php
 
-namespace link\db\connect;
+namespace links\db\connect;
 
-use link\db\Connect;
+use links\db\Connect;
 
 class Mysql extends Connect{}

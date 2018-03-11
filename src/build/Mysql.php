@@ -1,7 +1,7 @@
 <?php
 
-namespace link\db\build;
+namespace links\db\build;
 
-use link\db\Builder;
+use links\db\Builder;
 
 class Mysql extends Builder{}

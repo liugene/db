@@ -1,6 +1,6 @@
 <?php
 
-namespace link\db;
+namespace links\db;
 
 use stdClass;
 
