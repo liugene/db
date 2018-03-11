@@ -12,7 +12,7 @@
 // |               配置类
 // +----------------------------------------------------------------------
 
-namespace links\db;
+namespace linkphp\db;
 
 use PDO;
 use PDOException;
