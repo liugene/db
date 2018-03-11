@@ -1,0 +1,20 @@
+{
+  "name": "link/db",
+  "type": "library",
+  "description": "php orm 框架",
+  "keywords": ["orm","php orm framework"],
+  "authors": [
+    {
+      "name": "liugene",
+      "email": "liujun2199@vip.qq.com"
+    }
+  ],
+  "require": {
+    "php": "^5.5 || ^7.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "link\\db": "src"
+    }
+  }
+}
