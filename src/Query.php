@@ -6,8 +6,9 @@ use PDO;
 use PDOException;
 use PDOStatement;
 use Closure;
+use linkphp\interfaces\DatabaseInterface;
 
-class Query
+class Query implements DatabaseInterface
 {
 
     /**
@@ -317,8 +318,6 @@ class Query
         return $this->group;
     }
 
-    public function lock(){}
-
     public function having($having)
     {
         $this->having = $having;
@@ -341,9 +340,9 @@ class Query
         return $this->union;
     }
 
-    public function locks($locks)
+    public function lock($lock)
     {
-        $this->lock = $locks;
+        $this->lock = $lock;
         return $this;
     }
 
@@ -352,9 +351,9 @@ class Query
         return $this->lock;
     }
 
-    public function count(){}
+    public function count($filed){}
 
-    public function sum(){}
+    public function sum($filed){}
 
     public function getLastSql()
     {
@@ -378,7 +377,7 @@ class Query
         $this->connect()->rollBack();
     }
 
-    public function insertGetId(){}
+    public function insertGetId(array $data){}
 
     public function query($sql)
     {
