@@ -232,7 +232,7 @@ class Query implements DatabaseInterface
 
     public function table($table)
     {
-        $this->table = $table[0];
+        $this->table = $table;
         return $this;
     }
 
