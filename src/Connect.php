@@ -43,6 +43,21 @@ class Connect
         return $this->config;
     }
 
+    public function user()
+    {
+        return $this->config[0]['dbuser'];
+    }
+
+    public function password()
+    {
+        return $this->config[0]['dbpwd'];
+    }
+
+    public function port()
+    {
+        return $this->config[0]['port'];
+    }
+
     public function paramDns()
     {
         return $this->config[0]['dns'];
@@ -50,7 +65,7 @@ class Connect
 
     public function connect()
     {
-        $this->_pdo = new PDO($this->paramDns(),$this->user,$this->password);
+        $this->_pdo = new PDO($this->paramDns(),$this->user(),$this->password());
         return $this->_pdo;
     }
 

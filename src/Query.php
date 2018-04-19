@@ -12,6 +12,11 @@ class Query implements DatabaseInterface
 {
 
     /**
+     * 保存连接
+     */
+    private $connect;
+
+    /**
      * 数据库配置文件
      * @array $database
      */
@@ -111,9 +116,13 @@ class Query implements DatabaseInterface
      */
     public function connect()
     {
-        return $this->_pdo
+        if(isset($this->connect)){
+            return $this->connect;
+        }
+        $this->connect = $this->_pdo
             ->setConfig($this->database)
             ->connect();
+        return $this->connect;
     }
 
     public function pdo()
