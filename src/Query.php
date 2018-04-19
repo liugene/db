@@ -39,6 +39,8 @@ class Query implements DatabaseInterface
      */
     private $field;
 
+    private $distinct;
+
     /**
      * 条件
      * @var $where
@@ -169,7 +171,7 @@ class Query implements DatabaseInterface
                 return $this->pdoResult();
             }
             $field .= $k . ',';
-            $value .= $v . ',';
+            $value .=  "'" . $v . "'" . ',';
         }
         $field = substr($field, 0, -1);
         $value = substr($value, 0, -1);
@@ -232,13 +234,28 @@ class Query implements DatabaseInterface
 
     public function table($table)
     {
-        $this->table = $table[0];
+        if(is_array($table)){
+            $this->table = $table[0];
+            return $this;
+        }
+        $this->table = $table;
         return $this;
     }
 
     public function getTable()
     {
         return $this->table;
+    }
+
+    public function distinct($distinct)
+    {
+        $this->distinct = $distinct;
+        return $this;
+    }
+
+    public function getDistinct()
+    {
+        return $this->distinct;
     }
 
     public function field($field)

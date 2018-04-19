@@ -17,7 +17,7 @@ class Builder
 {
 
     // SQL表达式
-    protected $select_sql    = 'SELECT %DISTINCT% %FIELD% FROM %TABLE%%FORCE%%JOIN%%WHERE%%GROUP%%HAVING%%ORDER%%LIMIT%%UNION%%LOCK%%COMMENT%';
+    protected $select_sql    = 'SELECT %DISTINCT% %FIELD% FROM %TABLE% %FORCE%%JOIN%%WHERE%%GROUP%%HAVING%%ORDER%%LIMIT%%UNION%%LOCK%%COMMENT%';
     protected $insert_sql    = 'INSERT INTO %TABLE% (%FIELD%) VALUES (%DATA%) %COMMENT%';
     protected $insert_all_sql = 'INSERT INTO %TABLE% (%FIELD%) %DATA% %COMMENT%';
     protected $update_sql    = 'UPDATE %TABLE% SET %SET% %JOIN% %WHERE% %ORDER%%LIMIT% %LOCK%%COMMENT%';
@@ -29,6 +29,7 @@ class Builder
             ['%TABLE%', '%DISTINCT%', '%FIELD%', '%JOIN%', '%WHERE%', '%GROUP%', '%HAVING%', '%ORDER%', '%LIMIT%', '%UNION%', '%LOCK%', '%COMMENT%', '%FORCE%'],
             [
                 $query->getTable(),
+                $query->getDistinct(),
                 $query->getField(),
                 $query->getJoin(),
                 $query->getWhere(),
