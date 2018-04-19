@@ -232,6 +232,10 @@ class Query implements DatabaseInterface
 
     public function table($table)
     {
+        if(is_array($table)){
+            $this->table = $table[0];
+            return $this;
+        }
         $this->table = $table;
         return $this;
     }
