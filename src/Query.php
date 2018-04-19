@@ -33,6 +33,8 @@ class Query implements DatabaseInterface
      */
     private $table;
 
+    private $distinct;
+
     /**
      * 字段
      * @var $field
@@ -243,6 +245,17 @@ class Query implements DatabaseInterface
     public function getTable()
     {
         return $this->table;
+    }
+
+    public function distinct($distinct)
+    {
+        $this->distinct = $distinct;
+        return $this;
+    }
+
+    public function getDistinct()
+    {
+        return $this->distinct;
     }
 
     public function field($field)
