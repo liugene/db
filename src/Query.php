@@ -33,6 +33,8 @@ class Query implements DatabaseInterface
      */
     private $table;
 
+    private $distinct;
+
     /**
      * 字段
      * @var $field
