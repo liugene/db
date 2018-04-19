@@ -169,7 +169,7 @@ class Query implements DatabaseInterface
                 return $this->pdoResult();
             }
             $field .= $k . ',';
-            $value .= $v . ',';
+            $value .=  "'" . $v . "'" . ',';
         }
         $field = substr($field, 0, -1);
         $value = substr($value, 0, -1);
