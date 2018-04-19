@@ -41,8 +41,6 @@ class Query implements DatabaseInterface
      */
     private $field;
 
-    private $distinct;
-
     /**
      * 条件
      * @var $where
