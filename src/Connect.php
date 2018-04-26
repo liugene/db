@@ -69,4 +69,11 @@ class Connect
         return $this->_pdo;
     }
 
+    public function free(){}
+
+    public function __destruct()
+    {
+        // TODO: Implement __destruct() method.
+    }
+
 }

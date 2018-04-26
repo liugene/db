@@ -313,7 +313,7 @@ class Query implements DatabaseInterface
 
     public function limit($limit)
     {
-        $this->limit = $limit;
+        $this->limit = ' LIMIT ' . $limit;
         return $this;
     }
 
@@ -408,6 +408,7 @@ class Query implements DatabaseInterface
     public function query($sql)
     {
         $this->pdo_result->result = $this->connect()->query($sql);
+        $this->emptyAll();
         return $this->pdo_result;
     }
 
@@ -427,6 +428,22 @@ class Query implements DatabaseInterface
     public function fetchAll()
     {
         return $this->pdo_result->result->fetchAll();
+    }
+
+    public function emptyAll()
+    {
+        $this->table = '';
+        $this->where = '';
+        $this->field = '';
+        $this->limit = '';
+        $this->distinct = '';
+        $this->group = '';
+        $this->value = '';
+        $this->union = '';
+        $this->order = '';
+        $this->lock = '';
+        $this->join = '';
+        $this->having = '';
     }
 
 }
