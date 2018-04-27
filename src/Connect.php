@@ -15,10 +15,16 @@
 namespace linkphp\db;
 
 use PDO;
+use PDOStatement;
 use PDOException;
 
 class Connect
 {
+
+    /**
+     * @var PDOStatement
+     */
+    private $_PDOStatement;
 
     private $config = [];
 
@@ -65,14 +71,34 @@ class Connect
 
     public function connect()
     {
-        $this->_pdo = new PDO($this->paramDns(),$this->user(),$this->password());
-        return $this->_pdo;
+        try {
+            $this->_pdo = new PDO($this->paramDns(),$this->user(),$this->password());
+            return $this->_pdo;
+        } catch (PDOException $e) {
+            print "PDO Connect Error!: " . $e->getMessage() . "<br/>";
+            die();
+        }
     }
 
-    public function free(){}
+    public function pdoStatement($pdo = '')
+    {
+        if(!empty($this->_PDOStatement)) return $this->_PDOStatement;
+        $this->_PDOStatement = $pdo;
+        return $this->_PDOStatement;
+    }
+
+    public function debug(){}
+
+    public function free()
+    {
+        $this->_PDOStatement = null;
+    }
 
     public function __destruct()
     {
+        if($this->_PDOStatement){
+            $this->free();
+        }
         // TODO: Implement __destruct() method.
     }
 

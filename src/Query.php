@@ -3,8 +3,6 @@
 namespace linkphp\db;
 
 use PDO;
-use PDOException;
-use PDOStatement;
 use Closure;
 use linkphp\interfaces\DatabaseInterface;
 
@@ -44,7 +42,7 @@ class Query implements DatabaseInterface
      * 字段
      * @var $field
      */
-    private $field;
+    private $field = '*';
 
     /**
      * 条件
@@ -103,7 +101,10 @@ class Query implements DatabaseInterface
      */
     private $pdo_result;
 
-    public function __construct(Connect $connect,PDOResult $PDOResult,Builder $builder)
+    public function __construct(
+        Connect $connect,
+        PDOResult $PDOResult,
+        Builder $builder)
     {
         $this->_pdo = $connect;
         $this->pdo_result = $PDOResult;
@@ -136,6 +137,37 @@ class Query implements DatabaseInterface
         return;
     }
 
+    public function PDOStatement($pdo = '')
+    {
+        return $this->_pdo->pdoStatement($pdo);
+    }
+
+    public function prepare($sql)
+    {
+        return $this->connect()->prepare($sql);
+    }
+
+    public function bindParam($parameter, $variable, $data_type, $length)
+    {
+        return $this->PDOStatement()
+            ->bindParam(
+            $parameter,
+            $variable,
+            $data_type,
+            $length
+        );
+    }
+
+    public function bindValue($parameter, $value, $data_type)
+    {
+        return $this->PDOStatement()
+            ->bindValue(
+            $parameter,
+            $value,
+            $data_type
+        );
+    }
+
     /**
      * 数据库查询语句解析方法
      * 返回对应所有相关二维数组
@@ -145,7 +177,7 @@ class Query implements DatabaseInterface
     public function select($data=null)
     {
         if(!is_null($data)){
-            $this->pdo_result->exec = $this->connect()->prepare($data[0]);
+            $this->pdoStatement($this->prepare($data));
         } else {
             $this->query($this->_build->select($this));
             return $this->fetchAll();
@@ -162,7 +194,7 @@ class Query implements DatabaseInterface
     public function find($data=null)
     {
         if(!is_null($data)){
-            $this->pdo_result->exec = $this->connect()->prepare($data[0]);
+            $this->pdoStatement($this->prepare($data));
         } else {
             $this->query($this->_build->select($this));
             return $this->fetch();
@@ -176,7 +208,7 @@ class Query implements DatabaseInterface
         $value = '';
         foreach($data as $k => $v){
             if(is_numeric($k)){
-                $this->pdo_result->exec = $this->connect()->prepare($data[0]);
+                $this->pdoStatement($this->prepare($data));
                 return $this->pdoResult();
             }
             $field .= $k . ',';
@@ -208,7 +240,7 @@ class Query implements DatabaseInterface
     public function delete($data=null)
     {
         if(!is_null($data)){
-            $this->pdo_result->exec = $this->connect()->prepare($data[0]);
+            $this->pdoStatement($this->prepare($data));
         } else {
             return $this->exec($this->query($this->_build->delete($this)));
         }
@@ -218,7 +250,7 @@ class Query implements DatabaseInterface
     public function update($data=null)
     {
         if(!is_null($data)){
-            $this->pdo_result->exec = $this->connect()->prepare($data[0]);
+            $this->pdoStatement($this->prepare($data));
         } else {
             return $this->exec($this->query($this->_build->update($this)));
         }
@@ -231,13 +263,13 @@ class Query implements DatabaseInterface
      */
     public function execute()
     {
-        return $this->pdo_result->exec->execute();
+        return $this->PDOStatement()->execute();
     }
 
     public function pdoResult()
     {
         $this->execute();
-        $this->pdo_result->result = $this->pdo_result->exec->fetchAll();
+        $this->pdo_result->result = $this->PDOStatement()->fetchAll();
         return $this->pdo_result;
     }
 
@@ -412,6 +444,11 @@ class Query implements DatabaseInterface
         return $this->pdo_result;
     }
 
+    public function quote($string, $parameter_type = '')
+    {
+        $this->connect()->quote($string, $parameter_type);
+    }
+
     public function exec($sql)
     {
         $this->pdo_result->rowNum = $this->connect()->exec($sql);
@@ -428,6 +465,17 @@ class Query implements DatabaseInterface
     public function fetchAll()
     {
         return $this->pdo_result->result->fetchAll();
+    }
+
+    public function error()
+    {
+        $this->error['errorCode'] = $this->PDOStatement()->errorCode();
+        $this->error['errorInfo'] = $this->PDOStatement()->errorInfo();
+    }
+
+    public function getError()
+    {
+        return $this->error;
     }
 
     public function emptyAll()
