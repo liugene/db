@@ -80,7 +80,7 @@ class Connect
         }
     }
 
-    public function pdoStatement($pdo = '')
+    public function pdoStatement($pdo)
     {
         if(!empty($this->_PDOStatement)) return $this->_PDOStatement;
         $this->_PDOStatement = $pdo;

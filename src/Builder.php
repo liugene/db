@@ -21,7 +21,7 @@ class Builder
     protected $insert_sql    = 'INSERT INTO %TABLE% (%FIELD%) VALUES (%DATA%) %COMMENT%';
     protected $insert_all_sql = 'INSERT INTO %TABLE% (%FIELD%) %DATA% %COMMENT%';
     protected $update_sql    = 'UPDATE %TABLE% SET %SET% %JOIN% %WHERE% %ORDER%%LIMIT% %LOCK%%COMMENT%';
-    protected $delete_sql    = 'DELETE FROM %TABLE% %USING% %JOIN% %WHERE% %ORDER%%LIMIT% %LOCK%%COMMENT%';
+    protected $delete_sql    = 'DELETE FROM %TABLE% %JOIN% %WHERE% %ORDER%%LIMIT% %LOCK%%COMMENT%';
 
     public function select(Query $query)
     {
@@ -70,34 +70,31 @@ class Builder
     public function delete(Query $query)
     {
         $sql = str_replace(
-            ['%TABLE%','%USING%','%JOIN%','%WHERE%','%ORDER%','%LIMIT%','%LOCK%','%COMMENT%'],
+            ['%TABLE%','%JOIN%','%WHERE%','%ORDER%','%LIMIT%','%LOCK%','%COMMENT%'],
             [
                 $query->getTable(),
-                $query->getField(),
                 $query->getJoin(),
                 $query->getWhere(),
                 $query->getOrder(),
                 $query->getLimit(),
                 $query->getLocks(),
             ],$this->delete_sql);
-        dump($sql);die;
         return $sql;
     }
 
     public function update(Query $query)
     {
         $sql = str_replace(
-            ['%TABLE%','%USING%','%JOIN%','%WHERE%','%ORDER%','%LIMIT%','%LOCK%','%COMMENT%'],
+            ['%TABLE%','%SET%','%JOIN%','%WHERE%','%ORDER%','%LIMIT%','%LOCK%','%COMMENT%'],
             [
                 $query->getTable(),
-                $query->getField(),
+                substr($query->getUpdate(), 0, -1),
                 $query->getJoin(),
                 $query->getWhere(),
                 $query->getOrder(),
                 $query->getLimit(),
                 $query->getLocks(),
             ],$this->update_sql);
-        dump($sql);die;
         return $sql;
     }
 

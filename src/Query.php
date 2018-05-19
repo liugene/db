@@ -5,6 +5,7 @@ namespace linkphp\db;
 use PDO;
 use Closure;
 use linkphp\interfaces\DatabaseInterface;
+use PDOStatement;
 
 class Query implements DatabaseInterface
 {
@@ -101,14 +102,17 @@ class Query implements DatabaseInterface
      */
     private $pdo_result;
 
+    /**
+     * @var update语句
+     */
+    private $update;
+
     public function __construct(
         Connect $connect,
-        PDOResult $PDOResult,
-        Builder $builder)
+        PDOResult $PDOResult)
     {
         $this->_pdo = $connect;
         $this->pdo_result = $PDOResult;
-        $this->_build = $builder;
     }
 
     /**
@@ -126,7 +130,10 @@ class Query implements DatabaseInterface
         return $this->connect;
     }
 
-    public function pdo()
+    /**
+     * @return PDOStatement;
+     */
+    private function pdo()
     {
         return $this->pdo_result->result;
     }
@@ -137,14 +144,18 @@ class Query implements DatabaseInterface
         return;
     }
 
-    public function PDOStatement($pdo = '')
+    private function PDOStatement($pdo = '')
     {
         return $this->_pdo->pdoStatement($pdo);
     }
 
-    public function prepare($sql)
+    public function prepare($sql, $bind=null)
     {
-        return $this->connect()->prepare($sql);
+        $this->PDOStatement($this->connect()->prepare($sql));
+        foreach ($bind as $k => $v){
+            $this->bindValue($k+1,$v,PDO::PARAM_INT);
+        }
+        return ;
     }
 
     public function bindParam($parameter, $variable, $data_type, $length)
@@ -172,15 +183,19 @@ class Query implements DatabaseInterface
      * 数据库查询语句解析方法
      * 返回对应所有相关二维数组
      * @param array|null $data
-     * @return PDOResult
+     * @return Query
      */
     public function select($data=null)
     {
         if(!is_null($data)){
-            $this->pdoStatement($this->prepare($data));
+            if (count($data) == count($data, 1)) {
+                $this->pdoStatement($this->prepare($data[0]));
+            } else {
+                $this->pdoStatement($this->prepare($data[0], $data[1]));
+            }
         } else {
-            $this->query($this->_build->select($this));
-            return $this->fetchAll();
+            $this->query($this->build()->select($this));
+            return $this->get();
         }
         return $this->pdoResult();
     }
@@ -196,8 +211,8 @@ class Query implements DatabaseInterface
         if(!is_null($data)){
             $this->pdoStatement($this->prepare($data));
         } else {
-            $this->query($this->_build->select($this));
-            return $this->fetch();
+            $this->query($this->build()->select($this));
+            return $this->getOne();
         }
         return $this->pdoResult();
     }
@@ -218,7 +233,7 @@ class Query implements DatabaseInterface
         $value = substr($value, 0, -1);
         $this->field($field);
         $this->value($value);
-        return $this->exec($this->_build->insert($this));
+        return $this->exec($this->build()->insert($this));
     }
 
     public function insertAll(array $data)
@@ -234,7 +249,7 @@ class Query implements DatabaseInterface
         $field = implode(',',array_keys($data[0]));
         $this->value($value);
         $this->field($field);
-        return $this->exec($this->_build->insertAll($this));
+        return $this->exec($this->build()->insertAll($this));
     }
 
     public function delete($data=null)
@@ -242,19 +257,93 @@ class Query implements DatabaseInterface
         if(!is_null($data)){
             $this->pdoStatement($this->prepare($data));
         } else {
-            return $this->exec($this->query($this->_build->delete($this)));
+            return $this->exec($this->build()->delete($this));
         }
         return $this->pdoResult();
     }
 
-    public function update($data=null)
+    public function update($data)
     {
-        if(!is_null($data)){
-            $this->pdoStatement($this->prepare($data));
+        if (count($data) == count($data, 1)) {
+            if(is_array($data)){
+                array_walk_recursive($data,[$this,'parserUpdate']);
+                return $this->exec($this->build()->update($this));
+            } else {
+                $this->pdoStatement($this->prepare($data));
+            }
+            return $this->pdoResult();
         } else {
-            return $this->exec($this->query($this->_build->update($this)));
+            foreach ($data as $k => $v){
+                if($v[0] == 'INC'){
+                    $condition = [$k => $k . '+' . $v[1]];
+                    array_walk_recursive($condition,[$this,'parserUpdate'], true);
+                } elseif($v[0] == 'DEC') {
+                    $condition = [$k => $k . '-' . $v[1]];
+                    array_walk_recursive($condition,[$this,'parserUpdate'], true);
+                }
+            }
+            return $this->exec($this->build()->update($this));
         }
-        return $this->pdoResult();
+    }
+
+    public function getUpdate()
+    {
+        return $this->update;
+    }
+
+    /**
+     * 解析update语句
+     * @param $value
+     * @param $key
+     * @param boolean $set 是否设置字段增加获减少值
+     */
+    private function parserUpdate($value, $key, $set = false)
+    {
+        if($set){
+            $this->update .= $key . " = $value,";
+            return;
+        }
+        $this->update .= $key . " = '$value',";
+    }
+
+    /**
+     * 字段值()增长
+     * @param $field
+     * @param $step
+     * @return integer|true
+     */
+    public function setInc($field, $step=1)
+    {
+        return $this->setField($field, ['INC', $step]);
+    }
+
+    /**
+     * 字段值()减少
+     * @param $field
+     * @param $step
+     * @return integer|true
+     */
+    public function setDec($field, $step=1)
+    {
+        return $this->setField($field, ['DEC', $step]);
+    }
+
+    /**
+     * 设置记录的某个字段值
+     * 支持使用数据库字段和方法
+     * @access public
+     * @param  string|array $field 字段名
+     * @param  mixed        $value 字段值
+     * @return integer
+     */
+    public function setField($field, $value = '')
+    {
+        if (is_array($field)) {
+            $data = $field;
+        } else {
+            $data[$field] = $value;
+        }
+        return $this->update($data);
     }
 
     /**
@@ -269,8 +358,8 @@ class Query implements DatabaseInterface
     public function pdoResult()
     {
         $this->execute();
-        $this->pdo_result->result = $this->PDOStatement()->fetchAll();
-        return $this->pdo_result;
+        $this->pdo_result->result = $this->PDOStatement();
+        return $this;
     }
 
     public function table($table)
@@ -439,9 +528,14 @@ class Query implements DatabaseInterface
 
     public function query($sql)
     {
-        $this->pdo_result->result = $this->connect()->query($sql);
-        $this->emptyAll();
-        return $this->pdo_result;
+        if($result = $this->connect()->query($sql)){
+            $this->pdo_result->result = $result;
+            $this->emptyAll();
+            return $this->pdo_result;
+        }
+        $this->error($this->connect()->errorInfo());
+        throw new \PDOException($this->error['errorInfo']);
+
     }
 
     public function quote($string, $parameter_type = '')
@@ -451,26 +545,43 @@ class Query implements DatabaseInterface
 
     public function exec($sql)
     {
-        $this->pdo_result->rowNum = $this->connect()->exec($sql);
-        return $this->pdo_result->rowNum;
+        if($result = $this->connect()->exec($sql)){
+            $this->pdo_result->rowNum = $result;
+            $this->emptyAll();
+            return $this->pdo_result->rowNum;
+        }
+        $this->error($this->connect()->errorInfo());
+        throw new \PDOException($this->error['errorInfo']);
     }
 
-    public function build(){}
-
-    public function fetch()
+    /**
+     * sql构造方法
+     * @return Builder
+     */
+    private function build()
     {
-        return $this->pdo_result->result->fetch();
+        if(isset($this->_build)){
+            return $this->_build;
+        }
+        $class = "linkphp\\db\\build\\" . ucfirst($this->database[0]['db_type']);
+        $this->_build = new $class();
+        return $this->_build;
     }
 
-    public function fetchAll()
+    public function getOne()
     {
-        return $this->pdo_result->result->fetchAll();
+        return $this->pdo()->fetch();
     }
 
-    public function error()
+    public function get()
     {
-        $this->error['errorCode'] = $this->PDOStatement()->errorCode();
-        $this->error['errorInfo'] = $this->PDOStatement()->errorInfo();
+        return $this->pdo()->fetchAll();
+    }
+
+    private function error($error_info)
+    {
+        $this->error['errorCode'] = $error_info[0];
+        $this->error['errorInfo'] = $error_info[2];
     }
 
     public function getError()
@@ -478,11 +589,11 @@ class Query implements DatabaseInterface
         return $this->error;
     }
 
-    public function emptyAll()
+    private function emptyAll()
     {
         $this->table = '';
         $this->where = '';
-        $this->field = '';
+        $this->field = '*';
         $this->limit = '';
         $this->distinct = '';
         $this->group = '';
