@@ -4,6 +4,7 @@ namespace linkphp\db;
 
 use PDO;
 use Closure;
+use PDOException;
 use linkphp\interfaces\DatabaseInterface;
 use PDOStatement;
 
@@ -124,7 +125,8 @@ class Query implements DatabaseInterface
         if(isset($this->connect)){
             return $this->connect;
         }
-        $this->connect = $this->_pdo
+        $class = "linkphp\\db\\connect\\" . ucfirst($this->database[0]['db_type']);
+        $this->connect = (new $class())
             ->setConfig($this->database)
             ->connect();
         return $this->connect;
@@ -152,8 +154,10 @@ class Query implements DatabaseInterface
     public function prepare($sql, $bind=null)
     {
         $this->PDOStatement($this->connect()->prepare($sql));
-        foreach ($bind as $k => $v){
-            $this->bindValue($k+1,$v,PDO::PARAM_INT);
+        if(isset($bind)){
+            foreach ($bind as $k => $v){
+                $this->bindValue($k+1,$v,PDO::PARAM_INT);
+            }
         }
         return ;
     }
@@ -348,11 +352,16 @@ class Query implements DatabaseInterface
 
     /**
      * 执行一条预处理语句
+     * @throws PDOException
      * @return bool
      */
     public function execute()
     {
-        return $this->PDOStatement()->execute();
+        if($result = $this->PDOStatement()->execute()){
+            return $result;
+        }
+        $this->error($this->PDOStatement()->errorInfo());
+        throw new PDOException($this->error['errorInfo']);
     }
 
     public function pdoResult()
@@ -423,13 +432,23 @@ class Query implements DatabaseInterface
 
     public function join($join)
     {
-        $this->join = $join;
+        $this->join[] = $join;
         return $this;
     }
 
     public function getJoin()
     {
+        $this->parserJoin();
         return $this->join;
+    }
+
+    private function parserJoin()
+    {
+        $sql = '';
+        foreach ($this->join as $k => $v){
+            $sql .= $v . ' ';
+        }
+        $this->join = $sql;
     }
 
     public function limit($limit)
@@ -534,7 +553,7 @@ class Query implements DatabaseInterface
             return $this->pdo_result;
         }
         $this->error($this->connect()->errorInfo());
-        throw new \PDOException($this->error['errorInfo']);
+        throw new PDOException($this->error['errorInfo']);
 
     }
 
@@ -551,7 +570,7 @@ class Query implements DatabaseInterface
             return $this->pdo_result->rowNum;
         }
         $this->error($this->connect()->errorInfo());
-        throw new \PDOException($this->error['errorInfo']);
+        throw new PDOException($this->error['errorInfo']);
     }
 
     /**
