@@ -26,9 +26,11 @@ class Connect
      */
     private $_PDOStatement;
 
-    private $config = [];
+    protected $config = [];
 
     protected $dns;
+
+    protected $host;
 
     protected $user = 'root';
 
@@ -49,6 +51,11 @@ class Connect
         return $this->config;
     }
 
+    public function host()
+    {
+        return $this->config[0]['host'];
+    }
+
     public function user()
     {
         return $this->config[0]['dbuser'];
@@ -64,6 +71,11 @@ class Connect
         return $this->config[0]['port'];
     }
 
+    public function dbName()
+    {
+        return $this->config[0]['dbname'];
+    }
+
     public function paramDns()
     {
         return $this->config[0]['dns'];
@@ -75,8 +87,7 @@ class Connect
             $this->_pdo = new PDO($this->paramDns(),$this->user(),$this->password());
             return $this->_pdo;
         } catch (PDOException $e) {
-            print "PDO Connect Error!: " . $e->getMessage() . "<br/>";
-            die();
+            throw new PDOException($e->getMessage());
         }
     }
 

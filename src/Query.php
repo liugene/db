@@ -310,6 +310,20 @@ class Query implements DatabaseInterface
         $this->update .= $key . " = '$value',";
     }
 
+    public function count($filed)
+    {
+        $this->field("COUNT($filed)");
+        $this->exec($this->build()->select($this));
+        return $this->getOne();
+    }
+
+    public function sum($filed)
+    {
+        $this->field("SUM($filed)");
+        $this->query($this->build()->select($this));
+        return $this->getOne();
+    }
+
     /**
      * 字段值()增长
      * @param $field
@@ -436,6 +450,18 @@ class Query implements DatabaseInterface
         return $this;
     }
 
+    public function leftJoin($join)
+    {
+        $this->join[] = ' LEFT JOIN ' . $join;
+        return $this;
+    }
+
+    public function rightJoin($join)
+    {
+        $this->join[] = ' RIGHT JOIN ' . $join;
+        return $this;
+    }
+
     public function getJoin()
     {
         $this->parserJoin();
@@ -444,11 +470,13 @@ class Query implements DatabaseInterface
 
     private function parserJoin()
     {
-        $sql = '';
-        foreach ($this->join as $k => $v){
-            $sql .= $v . ' ';
+        if(isset($this->join)){
+            $sql = '';
+            foreach ($this->join as $k => $v){
+                $sql .= $v . ' ';
+            }
+            $this->join = $sql;
         }
-        $this->join = $sql;
     }
 
     public function limit($limit)
@@ -475,7 +503,7 @@ class Query implements DatabaseInterface
 
     public function group($group)
     {
-        $this->group = $group;
+        $this->group = ' GROUP BY ' . $group;
         return $this;
     }
 
@@ -486,7 +514,7 @@ class Query implements DatabaseInterface
 
     public function having($having)
     {
-        $this->having = $having;
+        $this->having = ' HAVING ' . $having;
         return $this;
     }
 
@@ -497,7 +525,7 @@ class Query implements DatabaseInterface
 
     public function union($union)
     {
-        $this->union = $union;
+        $this->union = ' UNION Join ' . $union;
         return $this;
     }
 
@@ -516,10 +544,6 @@ class Query implements DatabaseInterface
     {
         return $this->lock;
     }
-
-    public function count($filed){}
-
-    public function sum($filed){}
 
     public function getLastSql()
     {
