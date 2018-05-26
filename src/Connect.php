@@ -53,32 +53,32 @@ class Connect
 
     public function host()
     {
-        return $this->config[0]['host'];
+        return $this->config['host'];
     }
 
     public function user()
     {
-        return $this->config[0]['dbuser'];
+        return $this->config['dbuser'];
     }
 
     public function password()
     {
-        return $this->config[0]['dbpwd'];
+        return $this->config['dbpwd'];
     }
 
     public function port()
     {
-        return $this->config[0]['port'];
+        return $this->config['port'];
     }
 
     public function dbName()
     {
-        return $this->config[0]['dbname'];
+        return $this->config['dbname'];
     }
 
     public function paramDns()
     {
-        return $this->config[0]['dns'];
+        return $this->config['dns'];
     }
 
     public function connect()

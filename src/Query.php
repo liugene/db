@@ -125,7 +125,7 @@ class Query implements DatabaseInterface
         if(isset($this->connect)){
             return $this->connect;
         }
-        $class = "linkphp\\db\\connect\\" . ucfirst($this->database[0]['db_type']);
+        $class = "linkphp\\db\\connect\\" . ucfirst($this->database['db_type']);
         $this->connect = (new $class())
             ->setConfig($this->database)
             ->connect();
@@ -387,10 +387,6 @@ class Query implements DatabaseInterface
 
     public function table($table)
     {
-        if(is_array($table)){
-            $this->table = $table[0];
-            return $this;
-        }
         $this->table = $table;
         return $this;
     }
@@ -606,7 +602,7 @@ class Query implements DatabaseInterface
         if(isset($this->_build)){
             return $this->_build;
         }
-        $class = "linkphp\\db\\build\\" . ucfirst($this->database[0]['db_type']);
+        $class = "linkphp\\db\\build\\" . ucfirst($this->database['db_type']);
         $this->_build = new $class();
         return $this->_build;
     }

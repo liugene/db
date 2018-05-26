@@ -9,10 +9,10 @@ class Mysql extends Connect
 
     public function paramDns()
     {
-        if($this->config[0]['dns'] == ''){
+        if($this->config['dns'] == ''){
             return 'mysql:host=' . $this->host() . ':' . $this->port() . ';dbname=' . $this->dbName();
         }
-        return $this->config[0]['dns'];
+        return $this->config['dns'];
     }
 
 }
