@@ -5,7 +5,7 @@ namespace linkphp\db;
 use PDO;
 use Closure;
 use PDOException;
-use linkphp\interfaces\DatabaseInterface;
+use framework\interfaces\DatabaseInterface;
 use PDOStatement;
 
 class Query implements DatabaseInterface
