@@ -40,6 +40,12 @@ class Connect
 
     private $_pdo;
 
+    public function __construct($config)
+    {
+        $this->config = $config;
+        return $this;
+    }
+
     public function setConfig($config)
     {
         $this->config = $config;

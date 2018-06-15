@@ -17,15 +17,15 @@ class Query implements DatabaseInterface
     private $connect;
 
     /**
+     * @var Connect
+     */
+    private $_connect;
+
+    /**
      * 数据库配置文件
      * @array $database
      */
     private $database = [];
-
-    /**
-     * @var PDO
-     */
-    private $_pdo;
 
     /**
      * @var Builder
@@ -104,15 +104,17 @@ class Query implements DatabaseInterface
     private $pdo_result;
 
     /**
-     * @var update语句
+     * @var string update语句
      */
     private $update;
 
-    public function __construct(
-        Connect $connect,
-        PDOResult $PDOResult)
+    /**
+     * @var array 事件
+     */
+    private $event;
+
+    public function __construct(PDOResult $PDOResult)
     {
-        $this->_pdo = $connect;
         $this->pdo_result = $PDOResult;
     }
 
@@ -126,9 +128,11 @@ class Query implements DatabaseInterface
             return $this->connect;
         }
         $class = "linkphp\\db\\connect\\" . ucfirst($this->database['db_type']);
-        $this->connect = (new $class())
-            ->setConfig($this->database)
-            ->connect();
+        /**
+         * @var Connect
+         */
+        $this->_connect = (new $class($this->database));
+        $this->connect = $this->_connect->connect();
         return $this->connect;
     }
 
@@ -148,7 +152,7 @@ class Query implements DatabaseInterface
 
     private function PDOStatement($pdo = '')
     {
-        return $this->_pdo->pdoStatement($pdo);
+        return $this->_connect->pdoStatement($pdo);
     }
 
     public function prepare($sql, $bind=null)
@@ -213,7 +217,11 @@ class Query implements DatabaseInterface
     public function find($data=null)
     {
         if(!is_null($data)){
-            $this->pdoStatement($this->prepare($data));
+            if (count($data) == count($data, 1)) {
+                $this->pdoStatement($this->prepare($data[0]));
+            } else {
+                $this->pdoStatement($this->prepare($data[0], $data[1]));
+            }
         } else {
             $this->query($this->build()->select($this));
             return $this->getOne();
@@ -520,28 +528,49 @@ class Query implements DatabaseInterface
         return $this->having;
     }
 
+    /**
+     * 设置
+     * @param $union
+     * @return $this
+     */
     public function union($union)
     {
         $this->union = ' UNION Join ' . $union;
         return $this;
     }
 
+    /**
+     * 获取
+     * @return string
+     */
     public function getUnion()
     {
         return $this->union;
     }
 
+    /**
+     * 设置锁
+     * @param $lock
+     * @return $this
+     */
     public function lock($lock)
     {
         $this->lock = $lock;
         return $this;
     }
 
+    /**
+     * 获取锁
+     * @return string
+     */
     public function getLocks()
     {
         return $this->lock;
     }
 
+    /**
+     * 获取最后一个sql执行语句
+     */
     public function getLastSql()
     {
         return $this->pdo_result->result->queryString;
@@ -549,16 +578,25 @@ class Query implements DatabaseInterface
 
     public function transaction(){}
 
+    /**
+     * 开启一个事务
+     */
     public function beginTransaction()
     {
         $this->connect()->beginTransaction();
     }
 
+    /**
+     * 提交事务
+     */
     public function commit()
     {
         $this->connect()->commit();
     }
 
+    /**
+     * 回滚事务
+     */
     public function rollback()
     {
         $this->connect()->rollBack();
@@ -566,6 +604,12 @@ class Query implements DatabaseInterface
 
     public function insertGetId(array $data){}
 
+    /**
+     * 执行一条sql语句
+     * @param $sql
+     * @throws PDOException
+     * @return PDOResult
+     */
     public function query($sql)
     {
         if($result = $this->connect()->query($sql)){
@@ -583,9 +627,14 @@ class Query implements DatabaseInterface
         $this->connect()->quote($string, $parameter_type);
     }
 
+    /**
+     * 执行一条sql语句，返回受影响行数
+     * @throws PDOException
+     * @param $sql
+     */
     public function exec($sql)
     {
-        if($result = $this->connect()->query($sql)){
+        if($result = $this->connect()->exec($sql)){
             $this->pdo_result->rowNum = $result;
             $this->emptyAll();
             return $this->pdo_result->rowNum;
@@ -608,27 +657,69 @@ class Query implements DatabaseInterface
         return $this->_build;
     }
 
+    /**
+     * 获取一个数组结果集
+     */
     public function getOne()
     {
         return $this->pdo()->fetch();
     }
 
+    /**
+     * PDO获取多个数组结果集
+     */
     public function get()
     {
         return $this->pdo()->fetchAll();
     }
 
+    /**
+     * 设置错误信息
+     */
     private function error($error_info)
     {
         $this->error['errorCode'] = $error_info[0];
         $this->error['errorInfo'] = $error_info[2];
     }
 
+    /**
+     * 获取错误信息
+     */
     public function getError()
     {
         return $this->error;
     }
 
+    /**
+     * 设置SQL时间
+     * @param $event
+     * @param $callback
+     */
+    public function event($event, $callback)
+    {
+        $this->event[$event] = $callback;
+    }
+
+    /**
+     * 触发事件
+     * @access protected
+     * @param string $event   事件名
+     * @param mixed  $params  额外参数
+     * @return bool
+     */
+    protected function trigger($event, $params = [])
+    {
+        $result = false;
+        if (isset($this->event[$event])) {
+            $callback = $this->event[$event];
+            $result   = call_user_func_array($callback, [$params, $this]);
+        }
+        return $result;
+    }
+
+    /**
+     * 清空sql构造语句
+     */
     private function emptyAll()
     {
         $this->table = '';
