@@ -122,7 +122,7 @@ class Query implements DatabaseInterface
      */
     public function connect()
     {
-        if(isset($this->connect)){
+        if($this->connect){
             return $this->connect;
         }
         $class = "linkphp\\db\\connect\\" . ucfirst($this->database['db_type']);
@@ -154,7 +154,7 @@ class Query implements DatabaseInterface
     public function prepare($sql, $bind=null)
     {
         $this->PDOStatement($this->connect()->prepare($sql));
-        if(isset($bind)){
+        if($bind){
             foreach ($bind as $k => $v){
                 $this->bindValue($k+1,$v,PDO::PARAM_INT);
             }
@@ -313,8 +313,9 @@ class Query implements DatabaseInterface
     public function count($filed)
     {
         $this->field("COUNT($filed)");
-        $this->exec($this->build()->select($this));
-        return $this->getOne();
+        $this->query($this->build()->select($this));
+        $count = $this->getOne();
+        return (int)$count[0];
     }
 
     public function sum($filed)
@@ -466,7 +467,7 @@ class Query implements DatabaseInterface
 
     private function parserJoin()
     {
-        if(isset($this->join)){
+        if($this->join){
             $sql = '';
             foreach ($this->join as $k => $v){
                 $sql .= $v . ' ';
@@ -584,7 +585,7 @@ class Query implements DatabaseInterface
 
     public function exec($sql)
     {
-        if($result = $this->connect()->exec($sql)){
+        if($result = $this->connect()->query($sql)){
             $this->pdo_result->rowNum = $result;
             $this->emptyAll();
             return $this->pdo_result->rowNum;
@@ -599,7 +600,7 @@ class Query implements DatabaseInterface
      */
     private function build()
     {
-        if(isset($this->_build)){
+        if($this->_build){
             return $this->_build;
         }
         $class = "linkphp\\db\\build\\" . ucfirst($this->database['db_type']);
