@@ -3,7 +3,6 @@
 namespace linkphp\db;
 
 use PDO;
-use Closure;
 use PDOException;
 use framework\interfaces\DatabaseInterface;
 use PDOStatement;
@@ -119,6 +118,13 @@ class Query implements DatabaseInterface
      */
     private $event;
 
+    // 查询结果类型
+    protected $fetchType = PDO::FETCH_ASSOC;
+    // 字段属性大小写
+    protected $attrCase = PDO::CASE_LOWER;
+    // 返回或者影响记录数
+    protected $numRows = 0;
+
     public function __construct(PDOResult $PDOResult)
     {
         $this->pdo_result = $PDOResult;
@@ -139,6 +145,11 @@ class Query implements DatabaseInterface
          */
         $this->_connect = (new $class($this->database));
         $this->connect = $this->_connect->connect();
+
+        // 数据返回类型
+        if (isset($this->database['result_type'])) {
+            $this->fetchType = $this->database['result_type'];
+        }
         return $this->connect;
     }
 
@@ -162,6 +173,17 @@ class Query implements DatabaseInterface
     {
         if(is_array($file)) $this->database = $file;
         return $this;
+    }
+
+    /**
+     * 获取数据库的配置参数
+     * @access public
+     * @param string $config 配置名称
+     * @return mixed
+     */
+    public function getConfig($config = '')
+    {
+        return $config ? $this->database[$config] : $this->database;
     }
 
     private function PDOStatement($pdo = '')
@@ -329,7 +351,14 @@ class Query implements DatabaseInterface
             $this->update .= $key . " = $value,";
             return;
         }
-        $this->update .= $key . " = '$value',";
+
+        if(is_numeric($value)){
+            $this->update .= $key . " = $value,";
+        }
+
+        if(is_string($value)){
+            $this->update .= $key . " = '$value',";
+        }
     }
 
     public function count($filed)
@@ -465,13 +494,38 @@ class Query implements DatabaseInterface
 
     public function where($condition)
     {
-        $this->where = ' WHERE ' . $condition;
+        $this->where = $condition;
         return $this;
     }
 
     public function getWhere()
     {
+        $this->parserWhere();
+
         return $this->where;
+    }
+
+    private function parserWhere()
+    {
+        $where = $this->where;
+
+        if(is_array($where)){
+            $sql = '';
+            foreach ($where as $k => $v){
+
+                if(is_numeric($v)){
+                    $sql .= " $k = $v" . ' AND ';
+                }
+
+                if(is_string($v)){
+                    $sql .= " $k = \' $v \'" . ' AND ';
+                }
+            }
+
+            $where = substr($sql, 0, strlen($sql)-4);
+        }
+
+        $this->where = $this->where ? ' WHERE ' . $where : '';
     }
 
     public function join($join)
@@ -522,7 +576,7 @@ class Query implements DatabaseInterface
 
     public function order($order)
     {
-        $this->order = $order;
+        $this->order = ' ORDER BY ' . $order;
         return $this;
     }
 
@@ -601,7 +655,33 @@ class Query implements DatabaseInterface
         return $this->pdo_result->result->queryString;
     }
 
-    public function transaction(){}
+    /**
+     * 执行数据库事务
+     * @access public
+     * @param callable $callback 数据操作方法回调
+     * @return mixed
+     * @throws PDOException
+     * @throws \Exception
+     * @throws \Throwable
+     */
+    public function transaction($callback)
+    {
+        $this->beginTransaction();
+        try {
+            $result = null;
+            if (is_callable($callback)) {
+                $result = call_user_func_array($callback, [$this]);
+            }
+            $this->commit();
+            return $result;
+        } catch (\Exception $e) {
+            $this->rollback();
+            throw $e;
+        } catch (\Throwable $e) {
+            $this->rollback();
+            throw $e;
+        }
+    }
 
     /**
      * 开启一个事务
@@ -687,7 +767,9 @@ class Query implements DatabaseInterface
      */
     public function getOne()
     {
-        return $this->pdo()->fetch();
+        $data = $this->pdo()->fetch($this->fetchType);
+        $this->numRows = count($data);
+        return $data;
     }
 
     /**
@@ -695,7 +777,14 @@ class Query implements DatabaseInterface
      */
     public function get()
     {
-        return $this->pdo()->fetchAll();
+        $data = $this->pdo()->fetchAll($this->fetchType);
+        $this->numRows = count($data);
+        return $data;
+    }
+
+    public function getNumRows()
+    {
+        return $this->numRows;
     }
 
     /**
