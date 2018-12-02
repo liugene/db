@@ -33,6 +33,12 @@ class Query implements DatabaseInterface
     private $_build;
 
     /**
+     * 表前缀
+     * @var $prefix
+     */
+    private $prefix;
+
+    /**
      * 表名
      * @var $table
      */
@@ -137,6 +143,14 @@ class Query implements DatabaseInterface
     }
 
     /**
+     * @return Connect;
+     */
+    public function getQueryObject()
+    {
+        return $this->_connect;
+    }
+
+    /**
      * @return PDOStatement;
      */
     private function pdo()
@@ -147,7 +161,7 @@ class Query implements DatabaseInterface
     public function import($file)
     {
         if(is_array($file)) $this->database = $file;
-        return;
+        return $this;
     }
 
     private function PDOStatement($pdo = '')
@@ -163,7 +177,7 @@ class Query implements DatabaseInterface
                 $this->bindValue($k+1,$v,PDO::PARAM_INT);
             }
         }
-        return ;
+        return $this;
     }
 
     public function bindParam($parameter, $variable, $data_type, $length)
@@ -396,13 +410,24 @@ class Query implements DatabaseInterface
 
     public function table($table)
     {
-        $this->table = $table;
+        if($this->prefix){
+            $prefix = $this->prefix;
+        } else {
+            $prefix = $this->database['dbprefix'];
+        }
+        $this->table = $prefix . $table;
         return $this;
     }
 
     public function getTable()
     {
         return $this->table;
+    }
+
+    public function prefix($prefix)
+    {
+        $this->prefix = $prefix;
+        return $this;
     }
 
     public function distinct($distinct)

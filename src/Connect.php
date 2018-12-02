@@ -46,15 +46,31 @@ class Connect
         return $this;
     }
 
-    public function setConfig($config)
+    /**
+     * 设置数据库的配置参数
+     * @access public
+     * @param string|array      $config 配置名称
+     * @param mixed             $value 配置值
+     * @return void
+     */
+    public function setConfig($config, $value = '')
     {
-        $this->config = $config;
-        return $this;
+        if (is_array($config)) {
+            $this->config = array_merge($this->config, $config);
+        } else {
+            $this->config[$config] = $value;
+        }
     }
 
-    public function getConfig()
+    /**
+     * 获取数据库的配置参数
+     * @access public
+     * @param string $config 配置名称
+     * @return mixed
+     */
+    public function getConfig($config = '')
     {
-        return $this->config;
+        return $config ? $this->config[$config] : $this->config;
     }
 
     public function host()
